@@ -1,7 +1,7 @@
 require('dotenv/config')
 const express = require("express");
 const app = express();
-const port = process.env.PORT || 5320;
+const PORT = process.env.PORT || 5320;
 const connect = require('./config/DB');
 const authRoute = require('./routes/authRoutes');
 const userRoute = require("./routes/userRoute");
@@ -33,8 +33,8 @@ cloudinary.config({
 connect()
 .then(()=>{
 try{
-    app.listen(port,"localhost",()=>{
-        console.log(`Em-Server is connected to http://localhost:${port}`);
+    app.listen(PORT,()=>{
+        console.log(`Em-Server is connected to http://localhost:${PORT}`);
     })
 }catch(error){
     console.log("cannot connect to EM server");
