@@ -1,5 +1,8 @@
 const USER = require('../model/userModel');
 const jwt = require('jsonwebtoken');
+const sendEmail = require("../middleware/sendMail");
+const crypto = require("crypto")
+
 
 
 // registration
@@ -100,7 +103,65 @@ const isLoggedIn = (req,res)=>{
     console.log(error.message);
     res.json(false)
   }
+};
+
+// forgot password ftn
+const forgotPassword = async (req, res,next) => {
+  const { email } = req.body;
+  try {
+    const user = await USER.findOne({ email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "email not found" });
+    }
+    const resetToken = user.getResetPasswordToken();
+    await user.save();
+    const resetUrl = `http://localhost:5173/resetpassword/${resetToken}`;
+    const message = `<h1>You have requested for a password reset </h1> <p>Please go to this link to reset your password</p> <a href=${resetUrl} clicktracking = off> ${resetUrl} </a> `;
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "Password Reset Request",
+        text: message,
+      });
+      res.status(200).json({success:true,data:"Email sent"})
+    } catch (error) {
+      user.getResetPasswordToken = undefined;
+      user.getResetPasswordExpire = undefined;
+      await user.save();
+      return res.status(500).json({ message: "Email couldnt be sent", error });
+    }
+  } catch (error) {
+    res.json(error.message);
+  }
+};
+
+// reset password ftn
+const resetPassword = async (req,res)=>{
+  const resetPasswordToken = crypto.createHash("sha256").update(req.params.resetToken).digest("hex");
+  try {
+    const user = await USER.findOne({
+      resetPasswordToken,
+      resetPasswordExpire:{$gt:Date.now()}
+      // resetPasswordExpire:{$gt:Date('2024-12-20')}
+
+    })
+    if(!user){
+      return res.status(400).json({status:false,message:"invalid Reset Token"})
+    }
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+    res.status(201).json({success:true,message:"Password Reset Successfull"})
+    
+  } catch (error) {
+    res.status(500).json(error.message)
+    
+  }
 }
 
 
-module.exports = {registration,login,getUserName,isLoggedIn}
+module.exports = {registration,login,getUserName,isLoggedIn,forgotPassword,resetPassword}

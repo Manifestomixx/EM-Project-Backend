@@ -13,7 +13,7 @@ router.get("/", authMiddleware,getBioProfile);
 router.post("/follow/:followersId",authMiddleware,followUser);
 
 // unfollow a user
-router.post("/unfollow/:followerId",authMiddleware,unfollowUser);
+router.post("/unfollow/:followersId",authMiddleware,unfollowUser);
 
 // single user
 router.get("/userprofile/:userId",getSingleUser);
